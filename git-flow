@@ -1,0 +1,32 @@
+graph TD;
+
+subgraph Master
+  master((Master)) --> hotfix[Hotfix];
+end
+
+subgraph Develop
+  develop((Develop)) --> feature1[Feature 1];
+  develop((Develop)) --> feature2[Feature 2];
+  develop((Develop)) --> feature3[Feature 3];
+end
+
+subgraph Release
+  release((Release)) -->|Merge into develop, test, fix bugs| develop;
+  release((Release)) -->|Tag and Merge into master| master;
+end
+
+subgraph Feature
+  feature1[Feature 1] -->|Merge into develop| develop;
+  feature2[Feature 2] -->|Merge into develop| develop;
+  feature3[Feature 3] -->|Merge into develop| develop;
+end
+
+hotfix[Hotfix] -->|Merge into master and develop| master;
+hotfix[Hotfix] -->|Merge into develop after merge in master| develop;
+
+style master fill:#ffcccc,stroke:#f66,stroke-width:2px;
+style develop fill:#ccffcc,stroke:#6f6,stroke-width:2px;
+style release fill:#ffffcc,stroke:#ff0,stroke-width:2px;
+style feature fill:#ccffff,stroke:#66f,stroke-width:2px;
+style hotfix fill:#ffaaff,stroke:#f0f,stroke-width:2px;
+
