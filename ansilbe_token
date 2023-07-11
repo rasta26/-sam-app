@@ -1,0 +1,1 @@
+curl -k -X POST -u "<Client_ID>:<Client_Secret>" -d "grant_type=password&username=<tower_username>&password=<tower_password>&scope=write" https://<tower_host>/api/o/token/
