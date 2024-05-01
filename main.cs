@@ -1,38 +1,28 @@
-using Microsoft.Graph;
-using Microsoft.Identity.Client;
 using System;
+using System.Threading.Tasks;
 
 namespace GraphApiConsoleApp
 {
-    public class GraphClientSingleton
+    class Program
     {
-        private static GraphServiceClient _graphClient = null;
-        private static readonly object padlock = new object();
-
-        public static GraphServiceClient GetGraphClient(string clientId, string tenantId, string clientSecret)
+        static async Task Main(string[] args)
         {
-            if (_graphClient == null)
+            // Load configuration from secrets.json (as shown previously)
+            
+            var clientId = "..."; // Loaded from secrets.json
+            var tenantId = "..."; // Loaded from secrets.json
+            var clientSecret = "..."; // Loaded from secrets.json
+            
+            // Use the singleton to get the GraphServiceClient
+            var graphClient = GraphClientSingleton.GetGraphClient(clientId, tenantId, clientSecret);
+            var vdiManager = new VDIMachineManager(graphClient);
+
+            // Fetch and output details about VDI machines
+            var vdiMachines = await vdiManager.GetAllVDIMachinesAsync();
+            foreach (var device in vdiMachines)
             {
-                lock (padlock)
-                {
-                    if (_graphClient == null)
-                    {
-                        IConfidentialClientApplication confidentialClientApplication = ConfidentialClientApplicationBuilder
-                            .Create(clientId)
-                            .WithTenantId(tenantId)
-                            .WithClientSecret(clientSecret)
-                            .Build();
-
-                        // Create an authentication provider by passing in a client application and graph scopes.
-                        ClientCredentialProvider authProvider = new ClientCredentialProvider(confidentialClientApplication);
-
-                        _graphClient = new GraphServiceClient(authProvider);
-                    }
-                }
+                Console.WriteLine($"Device ID: {device.Id}, Name: {device.DisplayName}");
             }
-
-            return _graphClient;
         }
     }
 }
-
