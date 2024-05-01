@@ -1,37 +1,37 @@
+using Microsoft.Graph;
 using Microsoft.Identity.Client;
-using Newtonsoft.Json.Linq;
-using System.IO;
+using System;
 
 namespace GraphApiConsoleApp
 {
-    class Program
+    public class GraphClientSingleton
     {
-        static void Main(string[] args)
+        private static GraphServiceClient _graphClient = null;
+        private static readonly object padlock = new object();
+
+        public static GraphServiceClient GetGraphClient(string clientId, string tenantId, string clientSecret)
         {
-            // Load the secrets
-            var secrets = JObject.Parse(File.ReadAllText("secrets.json"));
+            if (_graphClient == null)
+            {
+                lock (padlock)
+                {
+                    if (_graphClient == null)
+                    {
+                        IConfidentialClientApplication confidentialClientApplication = ConfidentialClientApplicationBuilder
+                            .Create(clientId)
+                            .WithTenantId(tenantId)
+                            .WithClientSecret(clientSecret)
+                            .Build();
 
-            var clientId = secrets["clientId"].ToString();
-            var tenantId = secrets["tenantId"].ToString();
-            var clientSecret = secrets["clientSecret"].ToString();
+                        // Create an authentication provider by passing in a client application and graph scopes.
+                        ClientCredentialProvider authProvider = new ClientCredentialProvider(confidentialClientApplication);
 
-            ConnectToGraph(clientId, tenantId, clientSecret);
-        }
+                        _graphClient = new GraphServiceClient(authProvider);
+                    }
+                }
+            }
 
-        static void ConnectToGraph(string clientId, string tenantId, string clientSecret)
-        {
-            IConfidentialClientApplication app = ConfidentialClientApplicationBuilder.Create(clientId)
-                .WithClientSecret(clientSecret)
-                .WithAuthority($"https://login.microsoftonline.com/{tenantId}")
-                .Build();
-
-            // Add scopes required for your application.
-            string[] scopes = { "https://graph.microsoft.com/.default" };
-
-            var authResult = app.AcquireTokenForClient(scopes).ExecuteAsync().Result;
-
-            // Output the access token to verify the connection
-            System.Console.WriteLine($"Access Token: {authResult.AccessToken}");
+            return _graphClient;
         }
     }
 }
