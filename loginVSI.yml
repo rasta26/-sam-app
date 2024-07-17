@@ -1,0 +1,65 @@
+---
+- name: Install application from Intune using LoginVSI API
+  hosts: localhost
+  vars:
+    client_id: "your-client-id"
+    client_secret: "your-client-secret"
+    tenant_id: "your-tenant-id"
+    intune_app_id: "app-id-to-fetch"
+    login_vsi_api_url: "http://loginvsi-server/api/install"  # Example URL, replace with actual API endpoint
+    login_vsi_api_key: "your-loginvsi-api-key"  # Replace with your actual LoginVSI API key
+  tasks:
+    
+    - name: Obtain OAuth token for Microsoft Graph API
+      uri:
+        url: "https://login.microsoftonline.com/{{ tenant_id }}/oauth2/v2.0/token"
+        method: POST
+        body: "client_id={{ client_id }}&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default&client_secret={{ client_secret }}&grant_type=client_credentials"
+        headers:
+          Content-Type: "application/x-www-form-urlencoded"
+        return_content: yes
+      register: auth_response
+
+    - name: Set access token fact
+      set_fact:
+        access_token: "{{ auth_response.json.access_token }}"
+      
+    - name: Fetch application details from Intune
+      uri:
+        url: "https://graph.microsoft.com/v1.0/deviceAppManagement/mobileApps/{{ intune_app_id }}"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ access_token }}"
+        return_content: yes
+      register: app_details
+
+    - name: Debug application details
+      debug:
+        msg: "{{ app_details.json }}"
+        
+    - name: Prepare payload for LoginVSI API
+      set_fact:
+        loginvsi_payload: >
+          {
+            "application": {
+              "id": "{{ intune_app_id }}",
+              "name": "{{ app_details.json.displayName }}",
+              "installerUrl": "{{ app_details.json.installerUrl }}"  // Assume installerUrl is part of the JSON response
+            },
+            "targetMachines": ["machine1", "machine2"]  // Replace with actual target machine names or IPs
+          }
+    
+    - name: Install application using LoginVSI API
+      uri:
+        url: "{{ login_vsi_api_url }}"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          Authorization: "Bearer {{ login_vsi_api_key }}"
+        body: "{{ loginvsi_payload | to_nice_json }}"
+        status_code: 202  # Expected status code for accepted request; adjust if needed
+      register: install_response
+
+    - name: Debug installation response
+      debug:
+        msg: "{{ install_response.json }}"
