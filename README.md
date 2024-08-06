@@ -1,3 +1,4 @@
+```mermaid
 flowchart TD
     A[User Input]
     B[Script Execution]
