@@ -1,4 +1,4 @@
-```merimaid
+```mermaid
 sequenceDiagram
     participant User
     participant Script
