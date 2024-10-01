@@ -1,0 +1,8 @@
+tenant_id: "<your_tenant_id>"
+client_id: "<your_client_id>"
+client_secret: "<your_client_secret>"
+resource: "https://graph.microsoft.com"
+token_url: "https://login.microsoftonline.com/{{ tenant_id }}/oauth2/v2.0/token"
+devices_endpoint: "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices"
+detected_apps_endpoint: "https://graph.microsoft.com/v1.0/deviceManagement/managedDevices/{{ managedDeviceId }}/detectedApps"
+mobile_apps_endpoint: "https://graph.microsoft.com/v1.0/deviceAppManagement/mobileApps"
