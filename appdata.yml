@@ -1,0 +1,65 @@
+# gather_intune_app_data.yml
+---
+- name: Gather Intune App Data
+  hosts: localhost
+  vars_files:
+    - group_vars/all.yml
+  tasks:
+    - name: Obtain OAuth Token
+      uri:
+        url: "{{ token_url }}"
+        method: POST
+        headers:
+          Content-Type: application/x-www-form-urlencoded
+        body: "client_id={{ client_id }}&scope={{ resource }}/.default&client_secret={{ client_secret }}&grant_type=client_credentials"
+        body_format: form-urlencoded
+        return_content: yes
+      register: auth_response
+      no_log: true
+
+    - name: Set OAuth Token
+      set_fact:
+        oauth_token: "{{ auth_response.json.access_token }}"
+
+    - name: Retrieve Managed Devices
+      uri:
+        url: "{{ devices_endpoint }}"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ oauth_token }}"
+          Accept: "application/json"
+        return_content: yes
+      register: devices_response
+
+    - name: Print Managed Devices
+      debug:
+        msg: "{{ devices_response.json.value }}"
+    
+    - name: Retrieve Detected Apps for Each Device
+      uri:
+        url: "{{ detected_apps_endpoint | replace('managedDeviceId', item.id) }}"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ oauth_token }}"
+          Accept: "application/json"
+        loop: "{{ devices_response.json.value }}"
+        return_content: yes
+      register: detected_apps_response
+
+    - name: Print Detected Apps
+      debug:
+        msg: "{{ detected_apps_response.results | map(attribute='json.value') | list }}"
+    
+    - name: Retrieve Mobile Apps
+      uri:
+        url: "{{ mobile_apps_endpoint }}"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ oauth_token }}"
+          Accept: "application/json"
+        return_content: yes
+      register: mobile_apps_response
+
+    - name: Print Mobile Apps
+      debug:
+        msg: "{{ mobile_apps_response.json.value }}"
